@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leer Productos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>Datos Destacados</h2>
+        <div class="mt-3">
+            <a href="/" class="btn btn-secondary">Volver al Inicio</a>
+        </div>
+        
+        <div class="mt-4">
+            <label for="consulta" class="form-label">Seleccionar consulta:</label>
+            <select id="consulta" class="form-select">
+                <option value="todos">Todos los productos</option>
+                <option value="poco-stock">Productos con stock menor a 5</option>
+                <option value="orden-precio">Ordenar de más caro a más barato</option>
+                <option value="orden-stock">Ordenar de mayor stock a menor</option>
+            </select>
+        </div>
+
+        <div class="mt-4">
+            <label for="busqueda" class="form-label">Buscar por Nombre, Descripción, Precio o Stock:</label>
+            <input type="text" id="busqueda" class="form-control" placeholder="Escriba para filtrar...">
+        </div>
+
+        <table class="table table-striped mt-4">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Descripción</th>
+                    <th>Precio</th>
+                    <th>Stock</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-productos">
+                <!-- Aquí se cargarán los productos dinámicamente -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function cargarProductos(url) {
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    actualizarTabla(data);
+                })
+                .catch(error => console.error("Error al cargar los productos:", error));
+        }
+
+        function actualizarTabla(data) {
+            let tabla = document.getElementById("tabla-productos");
+            tabla.innerHTML = "";
+            data.forEach(producto => {
+                let fila = `<tr>
+                    <td>${producto.idproducto}</td>
+                    <td>${producto.nombre}</td>
+                    <td>${producto.descripcion}</td>
+                    <td>${producto.precio}</td>
+                    <td>${producto.stock}</td>
+                </tr>`;
+                tabla.innerHTML += fila;
+            });
+        }
+
+        document.getElementById("consulta").addEventListener("change", function() {
+            const consulta = this.value;
+            let url = "/api/productos";
+
+            if (consulta === "poco-stock") {
+                url = "/api/productos/filtro/poco-stock";
+            } else if (consulta === "orden-precio") {
+                url = "/api/productos/filtro/orden-precio";
+            } else if (consulta === "orden-stock") {
+                url = "/api/productos/filtro/orden-stock";
+            }
+            cargarProductos(url);
+        });
+
+        document.getElementById("busqueda").addEventListener("input", function() {
+            let query = this.value;
+            if (query.length < 2) {
+                document.getElementById("consulta").dispatchEvent(new Event("change"));
+                return;
+            }
+            fetch(`/api/productos/buscar-general?query=${query}`)
+                .then(response => response.json())
+                .then(data => {
+                    actualizarTabla(data);
+                })
+                .catch(error => console.error("Error al filtrar productos:", error));
+        });
+
+        // Cargar todos los productos por defecto al cargar la página
+        document.getElementById("consulta").dispatchEvent(new Event("change"));
+    </script>
+</body>
+</html>
